@@ -222,7 +222,7 @@ class AuditEventsService
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Dispatching event to internal listener {" + listener + "}: " + event)
                 }
-                dispatchToListener(event, listener)
+                AuditEventDispatcher.dispatchToListener(event, listener)
             }
 
             // dispatch to plugins
@@ -234,49 +234,11 @@ class AuditEventsService
                         }
                     }
                     .map { it.instance }
-                    .forEach { dispatchToListener(event, it) }
+                    .forEach { AuditEventDispatcher.dispatchToListener(event, it) }
         }
     }
 
 
-    /**
-     * Dispatch an event to a listener.
-     */
-    private static dispatchToListener(AuditEvent event, AuditEventListener listener) {
-
-        try {
-
-            // Call general callback
-            listener.onEvent(event)
-
-            // Call specific callbacks
-            if (ResourceTypes.USER.equals(event.resourceInfo.type)) {
-                switch (event.actionType) {
-                    case ActionTypes.LOGIN_SUCCESS:
-                        listener.onLoginSuccess(event)
-                        break
-
-                    case ActionTypes.LOGIN_FAILED:
-                        listener.onLoginFailed(event)
-                        break
-
-                    case ActionTypes.LOGOUT:
-                        listener.onLogout(event)
-                        break
-                }
-            } else if (ResourceTypes.PROJECT.equals(event.resourceInfo.type)) {
-                switch (event.actionType) {
-                    case ActionTypes.VIEW:
-                        listener.onProjectView(event)
-                        break
-                }
-            }
-
-        }
-        catch (Exception e) {
-            LOG.error("Error dispatching event to handler plugin: " + e.getMessage(), e)
-        }
-    }
 
 
     /**
